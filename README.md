@@ -4,14 +4,16 @@ To do this I'm going to need some demo code, which I'll keep in this repository.
 
 ## Blog posts
 
-There are coming up, but as I see them I'll post first about:
+I expect a couple of [blog posts](http://zipcpu.com) coming up on this
+topic.  For now, I'll probably post first about:
 
 1. How to build a [Numerically Controlled Oscillator (NCO)](https://en.wikipedia.org/wiki/Numerically_controlled_oscillator) within an [FPGA](https://en.wikipedia.org/wiki/Field-programmable_gate_array).
 
 2. I can then present the [first simple PLL](rtl/sdpll.v), and it might
    even make sense to those who read it.
 
-This is all if the Lord is willing.
+This is all if the [Lord is
+willing](https://www.blueletterbible.org/kjv/jas/4/15/).
 
 ## License
 
