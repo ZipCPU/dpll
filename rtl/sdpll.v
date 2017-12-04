@@ -1,10 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Filename: 	
+// Filename: 	sdpll.v
 //
 // Project:	A collection of phase locked loop (PLL) related projects
 //
-// Purpose:	This is simplest, 1-clock DPLL that I can think of building
+// Purpose:	This is simplest, 1-clock DPLL that I can think of building.
+//		It doesn't use an arctan for a phase detector, but rather
+//	plain old logic.  It doesn't use a sinewave table for the NCO, neither
+//	does it use a CORDIC.  This PLL uses a square wave for the NCO output.
+//	Yet, despite its limitations, it has had some *very* nice performance
+//	in simulation.
 //
 // Creator:	Dan Gisselquist, Ph.D.
 //		Gisselquist Technology, LLC
@@ -37,7 +42,11 @@
 //
 `default_nettype	none
 //
-module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
+module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
+`ifdef	VERILATOR
+	, o_dbg
+`endif
+	);
 	parameter		PHASE_BITS = 32;
 	parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1;
 	localparam		MSB=PHASE_BITS-1;
@@ -50,13 +59,20 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
 	input	wire			i_ce;
 	input	wire			i_input;
 	input	wire	[4:0]		i_lgcoeff;
+	output	wire	[PHASE_BITS-1:0] o_phase;
 	output	reg	[1:0]		o_err;
 	//
+`ifdef	VERILATOR
 	output	wire	[13:0]		o_dbg;
+`endif
 
-	reg		agreed_output, phase_err, lead;	// lag
+	reg		agreed_output,
+			phase_err, lead;	// lag
 	reg	[MSB:0]	ctr, phase_correction, freq_correction, r_step;
 
+	// Any time the input and our counter agree, let's keep track of that
+	// bit.  We'll need it in a moment in order to know which signal
+	// changed first.
 	initial	agreed_output = 0;
 	always @(posedge i_clk)
 	if (i_ce)
@@ -97,7 +113,6 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
 	always @(posedge i_clk)
 		if (i_ce)
 		begin
-
 			// If we match, then just step the counter forward
 			// by one delta phase amount
 			if (!phase_err)
@@ -115,6 +130,9 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
 			else // if (lag)
 				ctr <= ctr + r_step + phase_correction;
 		end
+	// Incidentally, we'll also output this internal phase in case you wish
+	// to use it for synchronizing anything with this clock.
+	assign	o_phase = ctr;
 
 	// The frequency correction needs to be the phase_correction squared
 	// divided by four in order to get a critically damped loop
@@ -122,6 +140,10 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
 	always @(posedge i_clk)
 		freq_correction <= { 3'b001, {(MSB-2){1'b0}} } >> (2*i_lgcoeff);
 
+	// On the clock, we'll apply this frequency correction, either slowing
+	// down or speeding up the frequency, any time there is a phase error.
+	// The exceptions are if 1) we aren't tracking frequency, or 2) the
+	// user wants to load in what frequency to use.
 	always @(posedge i_clk)
 		if ((i_ld)||(!OPT_TRACK_FREQUENCY))
 			r_step <= { 1'b0, i_step };
@@ -130,11 +152,26 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_err, o_dbg);
 		else if ((phase_err)&&(!lead))
 			r_step <= r_step + freq_correction;
 
+	// Output an error signal as follows:
+	// 1. If the two signals match, both one or both zeros, then there is
+	//	no phase error.
+	// 2. If there is a mismatch and ...
+	//	A. Our counter leads our input, then our error is -1, else if
+	//	B. Our input leads our counter (!lead), then our error signal
+	//		is a +1.
+	// All three of these numbers, -1, 0, and 1, all fit within two bits,
+	// so that's what we'll use here..
 	initial	o_err = 2'h0;
 	always @(posedge i_clk)
 	if (i_ce)
 		o_err <= (!phase_err) ? 2'b00 : ((lead) ? 2'b11 : 2'b01);
 
+	// The error signal by itself can be ... misleading.  Whenever it takes
+	// place, it is always a maximum error.  The signal is better understood
+	// by how many error signals take place over time.  To get this
+	// information, let's run it through a boxcar filter.
+`ifdef	VERILATOR
 	boxcar #(.IW(2), .LGMEM(12))
 		bcar(i_clk, 1'b0, 12'heff, i_ce, o_err, o_dbg);
+`endif
 endmodule
