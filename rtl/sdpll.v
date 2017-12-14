@@ -145,12 +145,15 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	// The exceptions are if 1) we aren't tracking frequency, or 2) the
 	// user wants to load in what frequency to use.
 	always @(posedge i_clk)
-		if ((i_ld)||(!OPT_TRACK_FREQUENCY))
+		if (i_ld)
 			r_step <= { 1'b0, i_step };
-		else if ((phase_err)&&(lead))
-			r_step <= r_step - freq_correction;
-		else if ((phase_err)&&(!lead))
-			r_step <= r_step + freq_correction;
+		else if ((OPT_TRACK_FREQUENCY)&&(phase_err))
+		begin
+			if (lead)
+				r_step <= r_step - freq_correction;
+			else
+				r_step <= r_step + freq_correction;
+		end
 
 	// Output an error signal as follows:
 	// 1. If the two signals match, both one or both zeros, then there is

@@ -56,15 +56,15 @@ int	main(int argc, char **argv) {
 
 	// Initialize our core
 	//
-	tb.i_lgcoeff = 4;
+	tb.i_lgcoeff = 6;
 	lclphase     = rand();
 	lclstep      = 0x31415928;
-	tb.i_step    = lclstep + (lclstep>>5);
+	tb.i_step    = lclstep + (lclstep>>3);
 	tb.i_ld      = 1;
 	tb.i_clk     = 0;
 	tb.i_ce      = 1;
 
-	for(int k=0; k<65536*32; k++) {
+	for(int k=0; k<65536; k++) {
 		tb.eval();
 		tfp->dump(10*k+8);
 		tb.i_clk = 1;
@@ -76,7 +76,7 @@ int	main(int argc, char **argv) {
 
 	
 		{
-			int	od[6];
+			int	od[7];
 			od[0] = lclphase;
 			od[1] = tb.v__DOT__r_step;
 			od[2] = tb.i_input;
