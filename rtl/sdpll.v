@@ -66,8 +66,8 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	output	wire	[13:0]		o_dbg;
 `endif
 
-	reg		agreed_output,
-			phase_err, lead;	// lag
+	reg		agreed_output, lead;	// lag
+	wire		phase_err;
 	reg	[MSB:0]	ctr, phase_correction, freq_correction, r_step;
 
 	// Any time the input and our counter agree, let's keep track of that
