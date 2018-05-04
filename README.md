@@ -15,7 +15,8 @@ the implementation found in this repository.  These are:
 If the [Lord is
 willing](https://www.blueletterbible.org/kjv/jas/4/15/), I may go deeper
 and describe some other 
-[PLL](https://en.wikipedia.org/wiki/Phase-locked_loop) implementations as well.
+[PLL](https://en.wikipedia.org/wiki/Phase-locked_loop) implementations as
+well--such as the sample time tracking PLL that I recently added.
 
 ## License
 
