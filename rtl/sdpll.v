@@ -147,7 +147,7 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	always @(posedge i_clk)
 		if (i_ld)
 			r_step <= { 1'b0, i_step };
-		else if ((OPT_TRACK_FREQUENCY)&&(phase_err))
+		else if ((i_ce)&&(OPT_TRACK_FREQUENCY)&&(phase_err))
 		begin
 			if (lead)
 				r_step <= r_step - freq_correction;
