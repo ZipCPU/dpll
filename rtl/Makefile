@@ -16,7 +16,7 @@
 ##
 ################################################################################
 ##
-## Copyright (C) 2017, Gisselquist Technology, LLC
+## Copyright (C) 2017-2018, Gisselquist Technology, LLC
 ##
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
@@ -47,13 +47,18 @@ VDIRFB:= $(FBDIR)/obj_dir
 VERILATOR := verilator
 VFLAGS:= -trace -Wall -MMD -cc
 
-.PHONY: test sdpll
-test: sdpll
-sdpll: $(VDIRFB)/Vsdpll__ALL.a
+.PHONY: test sdpll stbpll
+test: sdpll stbpll
+sdpll:  $(VDIRFB)/Vsdpll__ALL.a
+stbpll: $(VDIRFB)/Vstbpll__ALL.a
 
 $(VDIRFB)/Vsdpll__ALL.a: $(VDIRFB)/Vsdpll.h $(VDIRFB)/Vsdpll.cpp
 $(VDIRFB)/Vsdpll__ALL.a: $(VDIRFB)/Vsdpll.mk
 $(VDIRFB)/Vsdpll.h $(VDIRFB)/Vsdpll.cpp $(VDIRFB)/Vsdpll.mk: sdpll.v
+
+$(VDIRFB)/Vstbpll__ALL.a: $(VDIRFB)/Vstbpll.h $(VDIRFB)/Vstbpll.cpp
+$(VDIRFB)/Vstbpll__ALL.a: $(VDIRFB)/Vstbpll.mk
+$(VDIRFB)/Vstbpll.h $(VDIRFB)/Vstbpll.cpp $(VDIRFB)/Vstbpll.mk: stbpll.v
 
 $(VDIRFB)/V%.cpp $(VDIRFB)/V%.h $(VDIRFB)/V%.mk: $(FBDIR)/%.v
 	$(VERILATOR) $(VFLAGS) $*.v
@@ -67,4 +72,3 @@ clean:
 	rm -rf $(VDIRFB)/*.cpp
 	rm -rf $(VDIRFB)/*.h
 	rm -rf $(VDIRFB)/
-

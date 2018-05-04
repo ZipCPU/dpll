@@ -50,7 +50,7 @@ all:
 # we'll fill in what "all" references in a moment
 #
 # Set up some variables
-all: sdpll_tb
+all: sdpll_tb stbpll_tb
 CXX  := g++
 OBJDIR:= obj-pc
 RTLD := ../../rtl
@@ -63,14 +63,15 @@ INCS := -I$(VINCD) -I$(ROBJD)
 VSRCS:= verilated.cpp verilated_vcd_c.cpp
 VOBJS:= $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(VSRCS)))
 SDOBJ:= $(ROBJD)/Vsdpll__ALL.a
+STBOBJ:=$(ROBJD)/Vstbpll__ALL.a
 SUBMAKE := $(MAKE) --no-print-directory -C
 CFLAGS   := -Og -g -Wall $(INCS)
 
-SOURCES := sdpll_tb.cpp
+SOURCES := sdpll_tb.cpp stbpll_tb.cpp
 HEADERS := $(foreach header,$(subst  .cpp,.h,$(SOURCES)),$(wildcard $(header)))
 OBJECTS := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(SOURCES))) $(VOBJS)
 #
-PROGRAMS := sdpll_tb
+PROGRAMS := sdpll_tb stbpll_tb
 #
 # Now the return to the default/"all" target, and fill in some details
 all: $(PROGRAMS)
@@ -92,13 +93,18 @@ SDOBJS  := $(OBJDIR)/sdpll_tb.o $(VOBJS) $(SDOBJ)
 sdpll_tb: $(SDOBJS)
 	$(CXX) $(INCS) $(SDOBJS) -o $@
 
+STBOBJS := $(OBJDIR)/stbpll_tb.o $(VOBJS) $(STBOBJ)
+stbpll_tb: $(STBOBJS)
+	$(CXX) $(INCS) $(STBOBJS) -o $@
+
 #
 #
 # The "test" target, just runs our test bench object
 #
 .PHONY: test
-test:	sdpll_tb
+test:	sdpll_tb stbpll_tb
 	./sdpll_tb
+	./stbpll_tb
 
 #
 # The "clean" target, removing any and all remaining build (and test) products
@@ -106,7 +112,7 @@ test:	sdpll_tb
 .PHONY: clean
 clean:
 	rm -f *.vcd
-	rm -f sdpll_tb
+	rm -f $(PROGRAMS)
 	rm -rf $(OBJDIR)/
 
 #

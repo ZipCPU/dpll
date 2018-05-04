@@ -10,6 +10,7 @@ obj-zip
 .swp
 .*.swp
 .*.swo
+*.32t
 svn-commit*
 *_tb
 *_tb.dbl
