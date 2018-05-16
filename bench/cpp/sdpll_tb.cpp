@@ -40,6 +40,16 @@
 #include "verilated_vcd_c.h"
 #include "Vsdpll.h"
 
+#ifdef	OLD_VERILATOR
+#define	VVAR(A)	v__DOT_ ## A
+#error something
+#else
+#define	VVAR(A)	sdpll__DOT_ ## A
+#endif
+
+#define	r_step	VVAR(_r_step)
+#define	ctr	VVAR(_ctr)
+
 int	main(int argc, char **argv) {
 	Verilated::commandArgs(argc, argv);
 	Vsdpll		tb;
@@ -78,13 +88,13 @@ int	main(int argc, char **argv) {
 		{
 			int	od[7];
 			od[0] = lclphase;
-			od[1] = tb.v__DOT__r_step;
+			od[1] = tb.r_step;
 			od[2] = tb.i_input;
 			od[3] = tb.o_err;
 			if (od[3] == 3)
 				od[3] = -1;
-			od[4] = tb.v__DOT__ctr;
-			od[5] = tb.v__DOT__ctr - lclphase;
+			od[4] = tb.ctr;
+			od[5] = tb.ctr - lclphase;
 			od[6] = tb.o_dbg << (32-10);
 			od[6]>>= (32-10);
 

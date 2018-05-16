@@ -55,17 +55,23 @@ CXX  := g++
 OBJDIR:= obj-pc
 RTLD := ../../rtl
 ROBJD:= $(RTLD)/obj_dir
-VERILATOR_ROOT ?= $(shell bash -c 'verilator -V|grep VERILATOR_ROOT| head -1|sed -e " s/^.*=\s*//"')
-VROOT:= $(VERILATOR_ROOT)
-VINCD:= $(VROOT)/include
-INCS := -I$(VINCD) -I$(ROBJD)
+ifneq ($(VERILATOR_ROOT),)
+VERILATOR:=$(VERILATOR_ROOT)/bin/verilator
+else
+VERILATOR_ROOT ?= $(shell bash -c 'verilator -V|grep VERILATOR_ROOT | head -1 | sed -e " s/^.*=\s*//"')
+endif
+export  $(VERILATOR)
+VROOT  := $(VERILATOR_ROOT)
+VDEFS  := $(shell ./vversion.sh)
+VINCD  := $(VROOT)/include
+INCS   := -I$(VINCD) -I$(ROBJD)
 # VSRCS:= $(VROOT)/include/verilated.cpp $(VROOT)/include/verilated_vcd_c.cpp
-VSRCS:= verilated.cpp verilated_vcd_c.cpp
-VOBJS:= $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(VSRCS)))
-SDOBJ:= $(ROBJD)/Vsdpll__ALL.a
-STBOBJ:=$(ROBJD)/Vstbpll__ALL.a
+VSRCS  := verilated.cpp verilated_vcd_c.cpp
+VOBJS  := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(VSRCS)))
+SDOBJ  := $(ROBJD)/Vsdpll__ALL.a
+STBOBJ :=$(ROBJD)/Vstbpll__ALL.a
 SUBMAKE := $(MAKE) --no-print-directory -C
-CFLAGS   := -Og -g -Wall $(INCS)
+CFLAGS   := -Og -g -Wall $(INCS) $(VDEFS)
 
 SOURCES := sdpll_tb.cpp stbpll_tb.cpp
 HEADERS := $(foreach header,$(subst  .cpp,.h,$(SOURCES)),$(wildcard $(header)))
