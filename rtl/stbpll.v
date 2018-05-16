@@ -6,7 +6,9 @@
 //
 // Purpose:	A strobe PLL.  Given a strobe input, match a strobe output
 //		and counter to that input.  Useful when needing to resample
-//	from one channel to another.
+//	from one channel to another.  In that case, the strobe signal is the
+//	global CE signal from the incoming channel, and the outgoing phase
+//	tells you where you are between samples at all times.
 //
 // Creator:	Dan Gisselquist, Ph.D.
 //		Gisselquist Technology, LLC
@@ -142,9 +144,6 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	initial	phase_correction = 0;
 	always @(posedge i_clk)
 		phase_correction <= {1'b1,{(MSB){1'b0}}} >> i_lgcoeff;
-
-/// WARNING: THIS PHASE CORRECTION IS NOT FREQUENCY INDEPENDENT LIKE IT IS
-// SUPPOSED TO BE.  
 
 	// Finally, apply a correction
 	initial	ctr = 0;
