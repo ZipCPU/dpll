@@ -16,7 +16,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Copyright (C) 2017, Gisselquist Technology, LLC
+// Copyright (C) 2017-2019, Gisselquist Technology, LLC
 //
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
@@ -49,7 +49,8 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	);
 	parameter		PHASE_BITS = 32;
 	parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1;
-	localparam		MSB=PHASE_BITS-1;
+	parameter	[PHASE_BITS-1:0]	INITIAL_PHASE_STEP = 0;
+	localparam	MSB=PHASE_BITS-1;
 	//
 	input	wire	i_clk;
 	//
@@ -88,15 +89,15 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	// changes, false otherwise
 	//
 	always @(*)
-		if (agreed_output)
-			// We were last high.  Lead is true now
-			// if the counter goes low before the input
-			lead = (!ctr[MSB])&&(i_input);
-		else
-			// The last time we agreed, both the counter
-			// and the input were low.   This will be
-			// true if the counter goes high before the input
-			lead = (ctr[MSB])&&(!i_input);
+	if (agreed_output)
+		// We were last high.  Lead is true now
+		// if the counter goes low before the input
+		lead = (!ctr[MSB])&&(i_input);
+	else
+		// The last time we agreed, both the counter
+		// and the input were low.   This will be
+		// true if the counter goes high before the input
+		lead = (ctr[MSB])&&(!i_input);
 
 	// Any disagreement between the high order counter bit and the input
 	// is a phase error that we will need to correct
@@ -111,25 +112,25 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	// Finally, apply a correction
 	initial	ctr = 0;
 	always @(posedge i_clk)
-		if (i_ce)
-		begin
-			// If we match, then just step the counter forward
-			// by one delta phase amount
-			if (!phase_err)
-				ctr <= ctr + r_step;
+	if (i_ce)
+	begin
+		// If we match, then just step the counter forward
+		// by one delta phase amount
+		if (!phase_err)
+			ctr <= ctr + r_step;
 
-			// Otherwise we don't match.  We need to adjust our
-			// counter based upon how far off we are.
-			// If the counter is ahead of the input, then we should
-			// slow it down a touch.
-			else if (lead)
-				ctr <= ctr + r_step - phase_correction;
+		// Otherwise we don't match.  We need to adjust our
+		// counter based upon how far off we are.
+		// If the counter is ahead of the input, then we should
+		// slow it down a touch.
+		else if (lead)
+			ctr <= ctr + r_step - phase_correction;
 
-			// Likewise, if the counter is falling behind the input,
-			// then we need to speed it up.
-			else // if (lag)
-				ctr <= ctr + r_step + phase_correction;
-		end
+		// Likewise, if the counter is falling behind the input,
+		// then we need to speed it up.
+		else // if (lag)
+			ctr <= ctr + r_step + phase_correction;
+	end
 	// Incidentally, we'll also output this internal phase in case you wish
 	// to use it for synchronizing anything with this clock.
 	assign	o_phase = ctr;
@@ -144,16 +145,17 @@ module	sdpll(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 	// down or speeding up the frequency, any time there is a phase error.
 	// The exceptions are if 1) we aren't tracking frequency, or 2) the
 	// user wants to load in what frequency to use.
+	initial	r_step = INITIAL_PHASE_STEP;
 	always @(posedge i_clk)
-		if (i_ld)
-			r_step <= { 1'b0, i_step };
-		else if ((i_ce)&&(OPT_TRACK_FREQUENCY)&&(phase_err))
-		begin
-			if (lead)
-				r_step <= r_step - freq_correction;
-			else
-				r_step <= r_step + freq_correction;
-		end
+	if (i_ld)
+		r_step <= { 1'b0, i_step };
+	else if ((i_ce)&&(OPT_TRACK_FREQUENCY)&&(phase_err))
+	begin
+		if (lead)
+			r_step <= r_step - freq_correction;
+		else
+			r_step <= r_step + freq_correction;
+	end
 
 	// Output an error signal as follows:
 	// 1. If the two signals match, both one or both zeros, then there is
