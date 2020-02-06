@@ -23,5 +23,3 @@ well--such as the sample time tracking PLL that I recently added.
 All of the source code in this repository is released under the
 [GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).  If these conditions
 are not sufficient for your needs, other licenses terms may be purchased.
-(*Gosh, for just $250 I might even release the code in this repository under
-the [LGPL](https://www.gnu.org/licenses/lgpl-3.0.en.html).*)

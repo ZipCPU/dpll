@@ -1,6 +1,6 @@
 ################################################################################
 ##
-## Filename:	Makefile
+## Filename:	rtl/Makefile
 ##
 ## Project:	A collection of phase locked loop (PLL) related projects
 ##
@@ -16,7 +16,7 @@
 ##
 ################################################################################
 ##
-## Copyright (C) 2017-2019, Gisselquist Technology, LLC
+## Copyright (C) 2017-2020, Gisselquist Technology, LLC
 ##
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
@@ -47,10 +47,11 @@ VDIRFB:= $(FBDIR)/obj_dir
 VERILATOR := verilator
 VFLAGS:= -trace -Wall -MMD -cc
 
-.PHONY: test sdpll stbpll
-test: sdpll stbpll
+.PHONY: test sdpll stbpll quadpll
+test: sdpll stbpll quadpll
 sdpll:  $(VDIRFB)/Vsdpll__ALL.a
 stbpll: $(VDIRFB)/Vstbpll__ALL.a
+quadpll: $(VDIRFB)/Vquadpll__ALL.a
 
 $(VDIRFB)/Vsdpll__ALL.a: $(VDIRFB)/Vsdpll.h $(VDIRFB)/Vsdpll.cpp
 $(VDIRFB)/Vsdpll__ALL.a: $(VDIRFB)/Vsdpll.mk
@@ -59,6 +60,10 @@ $(VDIRFB)/Vsdpll.h $(VDIRFB)/Vsdpll.cpp $(VDIRFB)/Vsdpll.mk: sdpll.v
 $(VDIRFB)/Vstbpll__ALL.a: $(VDIRFB)/Vstbpll.h $(VDIRFB)/Vstbpll.cpp
 $(VDIRFB)/Vstbpll__ALL.a: $(VDIRFB)/Vstbpll.mk
 $(VDIRFB)/Vstbpll.h $(VDIRFB)/Vstbpll.cpp $(VDIRFB)/Vstbpll.mk: stbpll.v
+
+$(VDIRFB)/Vquadpll__ALL.a: $(VDIRFB)/Vquadpll.h $(VDIRFB)/Vquadpll.cpp
+$(VDIRFB)/Vquadpll__ALL.a: $(VDIRFB)/Vquadpll.mk
+$(VDIRFB)/Vquadpll.h $(VDIRFB)/Vquadpll.cpp $(VDIRFB)/Vquadpll.mk: quadpll.v
 
 $(VDIRFB)/V%.cpp $(VDIRFB)/V%.h $(VDIRFB)/V%.mk: $(FBDIR)/%.v
 	$(VERILATOR) $(VFLAGS) $*.v

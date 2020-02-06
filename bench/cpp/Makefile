@@ -21,7 +21,7 @@
 ##
 ################################################################################
 ##
-## Copyright (C) 2017-2019, Gisselquist Technology, LLC
+## Copyright (C) 2017-2020, Gisselquist Technology, LLC
 ##
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
@@ -50,7 +50,7 @@ all:
 # we'll fill in what "all" references in a moment
 #
 # Set up some variables
-all: sdpll_tb stbpll_tb
+all: sdpll_tb stbpll_tb quadpll_tb
 CXX  := g++
 OBJDIR:= obj-pc
 RTLD := ../../rtl
@@ -70,14 +70,15 @@ VSRCS  := verilated.cpp verilated_vcd_c.cpp
 VOBJS  := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(VSRCS)))
 SDOBJ  := $(ROBJD)/Vsdpll__ALL.a
 STBOBJ :=$(ROBJD)/Vstbpll__ALL.a
+QDOBJ  := $(ROBJD)/Vquadpll__ALL.a
 SUBMAKE := $(MAKE) --no-print-directory -C
 CFLAGS   := -Og -g -Wall $(INCS) $(VDEFS)
 
-SOURCES := sdpll_tb.cpp stbpll_tb.cpp
+SOURCES := sdpll_tb.cpp stbpll_tb.cpp quadpll_tb.cpp
 HEADERS := $(foreach header,$(subst  .cpp,.h,$(SOURCES)),$(wildcard $(header)))
 OBJECTS := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(SOURCES))) $(VOBJS)
 #
-PROGRAMS := sdpll_tb stbpll_tb
+PROGRAMS := sdpll_tb stbpll_tb quadpll_tb
 #
 # Now the return to the default/"all" target, and fill in some details
 all: $(PROGRAMS)
@@ -103,14 +104,25 @@ STBOBJS := $(OBJDIR)/stbpll_tb.o $(VOBJS) $(STBOBJ)
 stbpll_tb: $(STBOBJS)
 	$(CXX) $(INCS) $(STBOBJS) -o $@
 
+QUADOBJS := $(OBJDIR)/quadpll_tb.o $(VOBJS) $(QDOBJ)
+quadpll_tb: $(QUADOBJS)
+	$(CXX) $(INCS) $(QUADOBJS) -o $@
+
 #
 #
 # The "test" target, just runs our test bench object
 #
 .PHONY: test
-test:	sdpll_tb stbpll_tb
+test:	sdpll.vcd stbpll.vcd quadpll.vcd
+
+sdpll.vcd: sdpll_tb
 	./sdpll_tb
+
+stbpll.vcd: stbpll_tb
 	./stbpll_tb
+
+quadpll.vcd: quadpll_tb
+	./quadpll_tb
 
 #
 # The "clean" target, removing any and all remaining build (and test) products
