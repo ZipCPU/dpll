@@ -85,7 +85,7 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	//
 	input	wire			i_ce;	// True if i_sample is valid
 	input	wire	[(IW-1):0]	i_sample;// Input value to be filtered
-	output	wire	[(OW-1):0]	o_result;// Output filter value
+	output	reg	[(OW-1):0]	o_result;// Output filter value
 
 	reg			full;
 	reg	[(LGMEM-1):0]	rdaddr, wraddr;
@@ -98,10 +98,10 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	// It starts at zero, and increments on every valid sample.
 	initial	wraddr = 0;
 	always @(posedge i_clk)
-		if (i_reset)
-			wraddr <= 0;
-		else if (i_ce)
-			wraddr <= wraddr + 1'b1;
+	if (i_reset)
+		wraddr <= 0;
+	else if (i_ce)
+		wraddr <= wraddr + 1'b1;
 
 	// Calculate the requested number of averages.  If this value is
 	// fixed, these will be INITIAL_NAVG and the input i_navg will be
@@ -121,11 +121,11 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	// all values have been set.
 	initial	rdaddr = 0;
 	always @(posedge i_clk)
-		if (i_reset)
-			rdaddr <= -w_requested_navg;
-		else if (i_ce)
-			// rdaddr <= wraddr - navg + 1'b1;
-			rdaddr <= rdaddr + 1'b1;
+	if (i_reset)
+		rdaddr <= -w_requested_navg;
+	else if (i_ce)
+		// rdaddr <= wraddr - navg + 1'b1;
+		rdaddr <= rdaddr + 1'b1;
 
 	//
 	// Clock stage one
@@ -135,26 +135,26 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	// a clock to read from our memory
 	initial	preval = 0;
 	always @(posedge i_clk)
-		if (i_reset)
-			preval <= 0;
-		else if (i_ce)
-			preval <= i_sample;
+	if (i_reset)
+		preval <= 0;
+	else if (i_ce)
+		preval <= i_sample;
 
 	always @(posedge i_clk)
-		if (i_ce)
-			mem[wraddr] <= i_sample;
+	if (i_ce)
+		mem[wraddr] <= i_sample;
 
 	initial	memval = 0;
 	always @(posedge i_clk)
-		if (i_ce)
-			memval <= mem[rdaddr];
+	if (i_ce)
+		memval <= mem[rdaddr];
 
 	initial	full   = 1'b0;
 	always @(posedge i_clk)
-		if (i_reset)
-			full <= 0;
-		else if (i_ce)
-			full <= (full)||(rdaddr==0);
+	if (i_reset)
+		full <= 0;
+	else if (i_ce)
+		full <= (full)||(rdaddr==0);
 
 	// Clock stage two
 	//
@@ -163,16 +163,16 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	//
 	initial	sub = 0;
 	always @(posedge i_clk)
-		if (i_reset)
-			sub <= 0;
-		else if (i_ce)
-		begin
-			if (full)
-				sub <= { preval[(IW-1)], preval }
-						- { memval[(IW-1)], memval };
-			else
-				sub <= { preval[(IW-1)], preval };
-		end
+	if (i_reset)
+		sub <= 0;
+	else if (i_ce)
+	begin
+		if (full)
+			sub <= { preval[(IW-1)], preval }
+					- { memval[(IW-1)], memval };
+		else
+			sub <= { preval[(IW-1)], preval };
+	end
 
 	// Clock stage three
 	//
@@ -180,10 +180,10 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	// average summation.
 	initial	acc = 0;
 	always @(posedge i_clk)
-		if (i_reset)
-			acc <= 0;
-		else if (i_ce)
-			acc <= acc + { {(LGMEM-1){sub[IW]}}, sub };
+	if (i_reset)
+		acc <= 0;
+	else if (i_ce)
+		acc <= acc + { {(LGMEM-1){sub[IW]}}, sub };
 
 	//
 	// Clock stage four
@@ -217,10 +217,10 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	// IW+LGMEM bits.  So, let's take a clock and drop from IW+LGMEM bits
 	// to however many bits have been requested of us.
 	always @(posedge i_clk)
-		if (i_reset)
-			o_result <= 0;
-		else if (i_ce)
-			o_result <= rounded[(IW+LGMEM-1):(IW+LGMEM-OW)];
+	if (i_reset)
+		o_result <= 0;
+	else if (i_ce)
+		o_result <= rounded[(IW+LGMEM-1):(IW+LGMEM-OW)];
 
 
 endmodule
