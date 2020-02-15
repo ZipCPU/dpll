@@ -18,6 +18,11 @@ and describe some other
 [PLL](https://en.wikipedia.org/wiki/Phase-locked_loop) implementations as
 well--such as the sample time tracking PLL that I recently added.
 
+## Tutorial slides
+
+I placed a quick/short set of [tutorial slides](doc/tutoria.pdf) in the
+[doc/](doc/) directory.  Feel free to browse them and see what you think.
+
 ## License
 
 All of the source code in this repository is released under the
