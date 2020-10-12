@@ -1,7 +1,7 @@
 ################################################################################
 ##
 ## Filename:	Makefile
-##
+## {{{
 ## Project:	A collection of phase locked loop (PLL) related projects
 ##
 ## Purpose:	This is the master Makefile for the project.  It coordinates
@@ -12,9 +12,9 @@
 ##		Gisselquist Technology, LLC
 ##
 ################################################################################
-##
+## }}}
 ## Copyright (C) 2017-2020, Gisselquist Technology, LLC
-##
+## {{{
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
 ## by the Free Software Foundation, either version 3 of the License, or (at
@@ -35,27 +35,33 @@
 ##
 ################################################################################
 ##
-##
+## }}}
 all: rtl bench test
 SUBMAKE := $(MAKE) --no-print-directory -C
 .PHONY: doc
 doc:
 	$(SUBMAKE) doc
-
+##
 .PHONY: rtl
+## {{{
 rtl:
 	$(SUBMAKE) rtl
-
+## }}}
 .PHONY: bench
+## {{{
 bench: rtl
 	$(SUBMAKE) bench/cpp
-
+## }}}
 .PHONY: test
+## {{{
 test: bench
 	$(SUBMAKE) bench/cpp test
+## }}}
 
 .PHONY: clean
+## {{{
 clean:
 	$(SUBMAKE) rtl       clean
 	$(SUBMAKE) bench/cpp clean
 	$(SUBMAKE) doc       clean
+## }}}

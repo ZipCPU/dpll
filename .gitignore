@@ -10,6 +10,9 @@ obj-zip
 .swp
 .*.swp
 .*.swo
+*.aux
+*.log
+*.dvi
 *.32t
 svn-commit*
 *_tb

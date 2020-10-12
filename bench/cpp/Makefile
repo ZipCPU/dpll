@@ -1,7 +1,7 @@
 ################################################################################
 ##
 ## Filename:	bench/cpp/Makefile
-##
+## {{{
 ## Project:	A collection of phase locked loop (PLL) related projects
 ##
 ## Purpose:	This file directs the build of a Verilator-based test bench to
@@ -20,9 +20,9 @@
 ##		Gisselquist Technology, LLC
 ##
 ################################################################################
-##
+## }}}
 ## Copyright (C) 2017-2020, Gisselquist Technology, LLC
-##
+## {{{
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
 ## by the Free Software Foundation, either version 3 of the License, or (at
@@ -50,7 +50,9 @@ all:
 # we'll fill in what "all" references in a moment
 #
 # Set up some variables
-all: sdpll_tb stbpll_tb quadpll_tb
+# }}}
+all:
+## {{{
 CXX  := g++
 OBJDIR:= obj-pc
 RTLD := ../../rtl
@@ -71,6 +73,7 @@ VOBJS  := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(VSRCS)))
 SDOBJ  := $(ROBJD)/Vsdpll__ALL.a
 STBOBJ :=$(ROBJD)/Vstbpll__ALL.a
 QDOBJ  := $(ROBJD)/Vquadpll__ALL.a
+CRDCOBJ:= $(ROBJD)/Vdblcordicpll__ALL.a
 SUBMAKE := $(MAKE) --no-print-directory -C
 CFLAGS   := -Og -g -Wall $(INCS) $(VDEFS)
 
@@ -78,13 +81,15 @@ SOURCES := sdpll_tb.cpp stbpll_tb.cpp quadpll_tb.cpp
 HEADERS := $(foreach header,$(subst  .cpp,.h,$(SOURCES)),$(wildcard $(header)))
 OBJECTS := $(addprefix $(OBJDIR)/,$(subst .cpp,.o,$(SOURCES))) $(VOBJS)
 #
-PROGRAMS := sdpll_tb stbpll_tb quadpll_tb
+# }}}
+PROGRAMS := sdpll_tb stbpll_tb quadpll_tb dblcordicpll_tb
 #
 # Now the return to the default/"all" target, and fill in some details
 all: $(PROGRAMS)
 
 #
 # Generic build instructions for object files
+# {{{
 $(OBJDIR)/%.o: %.cpp
 	$(mk-objdir)
 	$(CXX) $(CFLAGS) -c $< -o $@
@@ -95,25 +100,40 @@ $(OBJDIR)/%.o: %.cpp
 $(OBJDIR)/%.o: $(VINCD)/%.cpp
 	$(mk-objdir)
 	$(CXX) $(CFLAGS) -c $< -o $@
-
+## }}}
+#
+# sdpll_tb
+## {{{
 SDOBJS  := $(OBJDIR)/sdpll_tb.o $(VOBJS) $(SDOBJ)
 sdpll_tb: $(SDOBJS)
 	$(CXX) $(INCS) $(SDOBJS) -o $@
-
+## }}}
+# stdpll_tb
+## {{{
 STBOBJS := $(OBJDIR)/stbpll_tb.o $(VOBJS) $(STBOBJ)
 stbpll_tb: $(STBOBJS)
 	$(CXX) $(INCS) $(STBOBJS) -o $@
-
+## }}}
+# quadpll_tb
+## {{{
 QUADOBJS := $(OBJDIR)/quadpll_tb.o $(VOBJS) $(QDOBJ)
 quadpll_tb: $(QUADOBJS)
 	$(CXX) $(INCS) $(QUADOBJS) -o $@
+## }}}
+# dblcordicpll_tb
+## {{{
+CORDICOBJS := $(OBJDIR)/dblcordicpll_tb.o $(VOBJS) $(CRDCOBJ)
+dblcordicpll_tb: $(CORDICOBJS)
+	$(CXX) $(INCS) $(CORDICOBJS) -o $@
+## }}}
 
 #
 #
 # The "test" target, just runs our test bench object
 #
 .PHONY: test
-test:	sdpll.vcd stbpll.vcd quadpll.vcd
+## {{{
+test:	sdpll.vcd stbpll.vcd quadpll.vcd dblcordicpll.vcd
 
 sdpll.vcd: sdpll_tb
 	./sdpll_tb
@@ -124,16 +144,26 @@ stbpll.vcd: stbpll_tb
 quadpll.vcd: quadpll_tb
 	./quadpll_tb
 
+dblcordicpll.vcd: dblcordicpll_tb
+	./dblcordicpll_tb
+## }}}
+
+#
+.PHONY: clean
+## {{{
 #
 # The "clean" target, removing any and all remaining build (and test) products
 #
-.PHONY: clean
 clean:
 	rm -f *.vcd
 	rm -f $(PROGRAMS)
 	rm -rf $(OBJDIR)/
+## }}}
 
 #
+.PHONY: depends
+## {{{
+
 # The "depends" target, to know what files things depend upon.  The depends
 # file itself is kept in $(OBJDIR)/depends.txt
 #
@@ -145,14 +175,15 @@ define build-depends
 	@rm $(OBJDIR)/xdepends.txt
 endef
 
-.PHONY: depends
 depends: tags
 	$(build-depends)
 
 $(OBJDIR)/depends.txt: depends
+## }}}
 
 #
 # Make sure the $(OBJDIR)/ directory exists.  This has taken some work to get
+## {{{
 # right.  While "mkdir -p $(OBJDIR)" could be used to do this as well, it
 # always bothered me that it seemed to be perpetually running.  Hence, we'll
 # first check if the directory exists, and only create it if it does not.
@@ -162,17 +193,22 @@ $(OBJDIR)/depends.txt: depends
 define	mk-objdir
 	@bash -c "if [ ! -e $(OBJDIR) ]; then mkdir -p $(OBJDIR); fi"
 endef
+## }}}
 
-
+.PHONY: tags
+## {{{
 #
 # The "tags" target
 #
 tags:	$(SOURCES) $(HEADERS)
 	@echo "Generating tags"
 	@ctags $(SOURCES) $(HEADERS)
+## }}}
 
 #
 # Include our generated dependency file.  The "-" in front of the include
 # basically tells "make" to include it if it can, and ignore it if it cannot
 # be included (i.e. if it doesn't exist)
+ifneq ($(MAKECMDGOALS),clean)
 -include $(OBJDIR)/depends.txt
+endif
