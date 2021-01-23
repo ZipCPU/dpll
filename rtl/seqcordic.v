@@ -18,7 +18,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020, Gisselquist Technology, LLC
+// Copyright (C) 2020-2021, Gisselquist Technology, LLC
 // {{{
 //
 // This program is free software (firmware): you can redistribute it and/or
@@ -52,8 +52,8 @@ module	seqcordic #(
 		// so they can't really be changed here.
 		localparam	IW=16,	// The number of bits in our inputs
 				OW=16,	// The number of output bits to produce
-				NSTAGES=19,
-				XTRA= 3,// Extra bits for internal precision
+				// NSTAGES=19,
+				// XTRA= 3,// Extra bits for internal precision
 				WW=19,	// Our working bit-width
 				PW=32	// Bits in our phase variables
 		// }}}

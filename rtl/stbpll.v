@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Filename: 	stbpll.v
-//
+// {{{
 // Project:	A collection of phase locked loop (PLL) related projects
 //
 // Purpose:	A strobe PLL.  Given a strobe input, match a strobe output
@@ -14,9 +14,9 @@
 //		Gisselquist Technology, LLC
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (C) 2018-2020, Gisselquist Technology, LLC
-//
+// }}}
+// Copyright (C) 2018-2021, Gisselquist Technology, LLC
+// {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
 // by the Free Software Foundation, either version 3 of the License, or (at
@@ -31,8 +31,9 @@
 // with this program.  (It's in the $(ROOT)/doc directory.  Run make with no
 // target there if the PDF file isn't present.)  If not, see
 // <http://www.gnu.org/licenses/> for a copy.
-//
+// }}}
 // License:	GPL, v3, as defined and found on www.gnu.org,
+// {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
 //
@@ -40,49 +41,54 @@
 //
 //
 `default_nettype	none
-//
-module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
+// }}}
+module	stbpll #(
+		// {{{
+		parameter		PHASE_BITS = 32,
+		parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1,
+		localparam		MSB=PHASE_BITS-1
+		// }}}
+	) (
+		// {{{
+		input	wire			i_clk,
+		//
+		input	wire			i_ld,
+		input	wire	[(MSB-1):0]	i_step,
+		//
+		input	wire			i_ce,
+		input	wire			i_stb,
+		input	wire	[4:0]		i_lgcoeff,
+		output	reg			 o_stb,
+		output	wire	[PHASE_BITS-1:0] o_phase
+		//
 `ifdef	VERILATOR
-	, o_err, o_dbg
+		, output reg	[1:0]		o_err,
+		output	wire	[13:0]		o_dbg
 `endif
+		// }}}
 	);
-	parameter		PHASE_BITS = 32;
-	parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1;
-	localparam		MSB=PHASE_BITS-1;
-	//
-	input	wire	i_clk;
-	//
-	input	wire			i_ld;
-	input	wire	[(MSB-1):0]	i_step;
-	//
-	input	wire			i_ce;
-	input	wire			i_stb;
-	input	wire	[4:0]		i_lgcoeff;
-	output	reg			 o_stb;
-	output	wire	[PHASE_BITS-1:0] o_phase;
-	//
-`ifdef	VERILATOR
-	output	reg	[1:0]		o_err;
-	output	wire	[13:0]		o_dbg;
-`endif
 
-	reg	lead;
-	wire	w_lead;
+	// Signal declarations
+	// {{{
+	reg		lead;
+	wire		w_lead;
+	reg	[MSB:0]	ctr, phase_correction, freq_correction, r_step;
+	wire		phase_err;
+	reg		r_phase_err;
+	// }}}
 
-	//////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////
 	//
-	//
-	//	Phase error, true or false
+	// Phase error, true or false
+	// {{{
+	////////////////////////////////////////////////////////////////////////
 	//
 	// True if our phase is in error, false otherwise.  If the loop is
 	// in lock, this should only be true "between" strobes during an
 	// error, as the two strobes are to be drawn together.
 	//
-	//////////////////////////////////////////////////////////////////
 	//
-	//
-	wire	phase_err;
-	reg	r_phase_err;
+
 	always @(posedge i_clk)
 	if (i_ce)
 	begin
@@ -99,17 +105,13 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 		end
 	end
 
-	/*
-	assign	phase_err = ((o_stb != i_stb)&&(!r_phase_err))
-			||(o_stb
-				||((r_phase_err)&&(!o_stb)&&(!i_stb));
-	*/
 	assign	phase_err = r_phase_err;
-
-	//////////////////////////////////////////////////////////////////
+	// }}}
+	////////////////////////////////////////////////////////////////////////
 	//
-	//
-	//	Lead: the direction of the phase error
+	// Lead: the direction of the phase error
+	// {{{
+	////////////////////////////////////////////////////////////////////////
 	//
 	//
 	// Lead is true if the our outgoing strobe takes place before the
@@ -118,8 +120,6 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	// falling behind the input and need to speed up.  The value is
 	// irrelevant if there is no error.
 	//
-	//////////////////////////////////////////////////////////////////
-	//
 	//
 	assign	w_lead = ((o_stb)&&(!r_phase_err))
 				||((lead)&&((!i_stb)||(r_phase_err)));
@@ -127,24 +127,19 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	always @(posedge i_clk)
 	if (i_ce)
 		lead <= w_lead;
+	// }}}
 
-	//////////////////////////////////////////////////////////////////
-	//
-	//
-	//
-	//
-	//
-	//////////////////////////////////////////////////////////////////
-	//
-	//
-	reg	[MSB:0]	ctr, phase_correction, freq_correction, r_step;
-
+	// phase_correction
+	// {{{
 	// How much we correct our phase by is a function of our loop
 	// coefficient, here represented by 2^{-i_lgcoeff}.
 	initial	phase_correction = 0;
 	always @(posedge i_clk)
-		phase_correction <= {1'b1,{(MSB){1'b0}}} >> i_lgcoeff;
+		phase_correction <= {1'b1, {(MSB){1'b0}} } >> i_lgcoeff;
+	// }}}
 
+	// ctr, o_phase
+	// {{{
 	// Finally, apply a correction
 	initial	ctr = 0;
 	always @(posedge i_clk)
@@ -171,28 +166,37 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	// We'll also output this internal phase in case you wish
 	// to use it for synchronizing anything with this clock.
 	assign	o_phase = ctr;
+	// }}}
 
+	// freq_correction
+	// {{{
 	// The frequency correction needs to be the phase_correction squared
 	// divided by four in order to get a critically damped loop
 	initial	freq_correction = 0;
 	always @(posedge i_clk)
 		freq_correction <= { 3'b001, {(MSB-2){1'b0}} } >> (2*i_lgcoeff);
+	// }}}
 
+	// r_step -- frequency tracking
+	// {{{
 	// On the clock, we'll apply this frequency correction, either slowing
 	// down or speeding up the frequency, any time there is a phase error.
 	// The exceptions are if 1) we aren't tracking frequency, or 2) the
 	// user wants to load in what frequency to use.
 	always @(posedge i_clk)
-		if (i_ld)
-			r_step <= { 1'b0, i_step };
-		else if ((i_ce)&&(OPT_TRACK_FREQUENCY)&&(phase_err))
-		begin
-			if (lead)
-				r_step <= r_step - freq_correction;
-			else
-				r_step <= r_step + freq_correction;
-		end
+	if (i_ld)
+		r_step <= { 1'b0, i_step };
+	else if ((i_ce)&&(OPT_TRACK_FREQUENCY)&&(phase_err))
+	begin
+		if (lead)
+			r_step <= r_step - freq_correction;
+		else
+			r_step <= r_step + freq_correction;
+	end
+	// }}}
 
+	// o_err
+	// {{{
 	// Output an error signal as follows:
 	// 1. If the two signals match, both one or both zeros, then there is
 	//	no phase error.
@@ -206,7 +210,10 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	always @(posedge i_clk)
 	if (i_ce)
 		o_err <= (!phase_err) ? 2'b00 : ((lead) ? 2'b11 : 2'b01);
+	// }}}
 
+	// o_dbg
+	// {{{
 	// The error signal by itself can be ... misleading.  Whenever it takes
 	// place, it is always a maximum error.  The signal is better understood
 	// by how many error signals take place over time.  To get this
@@ -215,4 +222,5 @@ module	stbpll(i_clk, i_ld, i_step, i_ce, i_stb, i_lgcoeff, o_stb, o_phase
 	boxcar #(.IW(2), .LGMEM(12))
 		bcar(i_clk, 1'b0, 12'heff, i_ce, o_err, o_dbg);
 `endif
+	// }}}
 endmodule

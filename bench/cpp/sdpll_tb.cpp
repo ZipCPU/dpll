@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Filename: 	sdpll_tb.cpp
-//
+// {{{
 // Project:	A collection of phase locked loop (PLL) related projects
 //
 // Purpose:	
@@ -10,9 +10,9 @@
 //		Gisselquist Technology, LLC
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (C) 2017-2020, Gisselquist Technology, LLC
-//
+// }}}
+// Copyright (C) 2017-2021, Gisselquist Technology, LLC
+// {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
 // by the Free Software Foundation, either version 3 of the License, or (at
@@ -27,25 +27,28 @@
 // with this program.  (It's in the $(ROOT)/doc directory.  Run make with no
 // target there if the PDF file isn't present.)  If not, see
 // <http://www.gnu.org/licenses/> for a copy.
-//
+// }}}
 // License:	GPL, v3, as defined and found on www.gnu.org,
+// {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-//
+// }}}
 #include <stdio.h>
 #include <verilated.h>
 #include "verilated_vcd_c.h"
 #include "Vsdpll.h"
 
 #ifdef	OLD_VERILATOR
+// {{{
 #define	VVAR(A)	v__DOT_ ## A
 #error something
 #else
 #define	VVAR(A)	sdpll__DOT_ ## A
 #endif
+// }}}
 
 #define	r_step	VVAR(_r_step)
 #define	ctr	VVAR(_ctr)
@@ -56,16 +59,22 @@ int	main(int argc, char **argv) {
 	FILE		*intfp;
 	int	lclphase, lclstep;
 
+	// Set up trace file generation
+	// {{{
 	Verilated::traceEverOn(true);
 	VerilatedVcdC* tfp = new VerilatedVcdC;
 	tb.trace(tfp, 99);
 	tfp->open("sdpll.vcd");
+	// }}}
 
+	// Open an output file for DSP-type data
+	// {{{
 	intfp = fopen("sdpll.32t","w");
 	assert(intfp);
+	// }}}
 
 	// Initialize our core
-	//
+	// {{{
 	tb.i_lgcoeff = 6;
 	lclphase     = rand();
 	lclstep      = 0x31415928;
@@ -73,8 +82,13 @@ int	main(int argc, char **argv) {
 	tb.i_ld      = 1;
 	tb.i_clk     = 0;
 	tb.i_ce      = 1;
+	// }}}
 
+	// Main simulation loop
+	// {{{
 	for(int k=0; k<65536; k++) {
+		// Step the clock
+		// {{{
 		tb.eval();
 		tfp->dump(10*k+8);
 		tb.i_clk = 1;
@@ -83,8 +97,10 @@ int	main(int argc, char **argv) {
 		tb.i_clk = 0;
 		tb.eval();
 		tfp->dump(10*k+15);
+		// }}}
 
-	
+		// Record our key internal wires and results for later analysis
+		// {{{
 		{
 			int	od[7];
 			od[0] = lclphase;
@@ -100,14 +116,22 @@ int	main(int argc, char **argv) {
 
 			fwrite(od, sizeof(int), 7, intfp);
 		}
+		// }}}
 
+		// Set the inputs for the next round
+		// {{{
 		tb.i_ld = 0;
 		tb.i_clk = 0;
 		lclphase += lclstep;
 		tb.i_input = (lclphase >> 31)&1;
+		// }}}
 	}
+	// }}}
 
+	// Clean up and exit
+	// {{{
 	tfp->close();
 	fclose(intfp);
 	printf("Simulation complete\n");
+	// }}}
 }

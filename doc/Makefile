@@ -1,7 +1,7 @@
 ################################################################################
 ##
 ## Filename: 	Makefile
-##
+## {{{
 ## Project:	A collection of phase locked loop (PLL) related projects
 ##
 ## Purpose:	To coordinate the build of documentation PDFs from their
@@ -17,9 +17,9 @@
 ##		Gisselquist Technology, LLC
 ##
 ################################################################################
-##
-## Copyright (C) 2017-2020, Gisselquist Technology, LLC
-##
+## }}}
+## Copyright (C) 2017-2021, Gisselquist Technology, LLC
+## {{{
 ## This program is free software (firmware): you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as published
 ## by the Free Software Foundation, either version 3 of the License, or (at
@@ -40,12 +40,13 @@
 ##
 ################################################################################
 ##
-##
+## }}}
 all:	gpl
 pdf:	gpl
 DSRC := src
 
 .PHONY: gpl
+## {{{
 gpl: gpl-3.0.pdf
 
 gpl-3.0.pdf: $(DSRC)/gpl-3.0.tex
@@ -54,12 +55,14 @@ gpl-3.0.pdf: $(DSRC)/gpl-3.0.tex
 	dvips -q -z -t letter -P pdf -o gpl-3.0.ps gpl-3.0.dvi
 	ps2pdf -dAutoRotatePages=/All gpl-3.0.ps gpl-3.0.pdf
 	rm gpl-3.0.dvi gpl-3.0.log gpl-3.0.aux gpl-3.0.ps
+## }}}
 
 .PHONY: clean
+## {{{
 clean:
 	rm -f $(DSRC)/*.dvi $(DSRC)/*.log
 	rm -f $(DSRC)/*.aux $(DSRC)/*.toc
 	rm -f $(DSRC)/*.lot $(DSRC)/*.lof
 	rm -f $(DSRC)/*.out spec.ps spec.pdf
 	rm -f gpl-3.0.pdf
-
+## }}}

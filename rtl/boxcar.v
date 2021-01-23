@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Filename: 	boxcar.v
-//
+// {{{
 // Project:	DSP Filtering Example Project
 //
 // Purpose:	This filter expands upon the capabilities of the simplest.v
@@ -43,9 +43,9 @@
 //		Gisselquist Technology, LLC
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (C) 2017-2020, Gisselquist Technology, LLC
-//
+// }}}
+// Copyright (C) 2017-2021, Gisselquist Technology, LLC
+// {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of  the GNU General Public License as published
 // by the Free Software Foundation, either version 3 of the License, or (at
@@ -69,24 +69,34 @@
 //
 //
 `default_nettype	none
-//
-module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
-	parameter	IW=16,		// Input bit-width
-			LGMEM=6,	// Size of the memory.
-			OW=(IW+LGMEM);	// Output bit-width
-	parameter [0:0]	FIXED_NAVG=1'b0; // True if number of averages is fixed
-	// Always assume we'll be averaging by the maximum amount, unless told
-	// otherwise.  Minus one, in two's complement, will become this number
-	// when interpreted as an unsigned number.
-	parameter	[(LGMEM-1):0]	INITIAL_NAVG= -1; // Initial avglen
-	input	wire			i_clk,	// Data clock
-					i_reset;// Positive synchronous reset
-	input	wire	[(LGMEM-1):0]	i_navg;	// Requested number of averages
-	//
-	input	wire			i_ce;	// True if i_sample is valid
-	input	wire	[(IW-1):0]	i_sample;// Input value to be filtered
-	output	reg	[(OW-1):0]	o_result;// Output filter value
+// }}}
+module	boxcar #(
+		// {{{
+		parameter	IW=16,		// Input bit-width
+				LGMEM=6,	// Size of the memory.
+				OW=(IW+LGMEM),	// Output bit-width
+		parameter [0:0]	FIXED_NAVG=1'b0, // True if nbr of avgs is fixed
+		localparam [0:0] OPT_SIGNED=1'b0, // T for averaging signed nbrs
+		// Always assume we'll be averaging by the maximum amount,
+		// unless told otherwise.  Minus one, in two's complement, will
+		// become this number when interpreted as an unsigned number.
+		parameter	[(LGMEM-1):0]	INITIAL_NAVG= -1
+		// }}}
+	) (
+		// {{{
+		// (i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
+		input	wire			i_clk,	// Data clock
+						i_reset,// Synchronous reset
+		input	wire	[(LGMEM-1):0]	i_navg,	// Requested nbr of avgs
+		//
+		input	wire			i_ce,	// T if i_sample is vld
+		input	wire	[(IW-1):0]	i_sample,// Sampl to be filtered
+		output	reg	[(OW-1):0]	o_result// Output filter value
+		// }}}
+	);
 
+	// Signal declarations
+	// {{{
 	reg			full;
 	reg	[(LGMEM-1):0]	rdaddr, wraddr;
 	reg	[(IW-1):0]	mem [0:((1<<LGMEM)-1)];
@@ -94,6 +104,12 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	reg	[IW:0]	sub;
 	reg	[(IW+LGMEM-1):0] acc;
 
+	wire	[(LGMEM-1):0]	w_requested_navg;
+	wire	[(IW+LGMEM-1):0]	rounded;
+	// }}}
+
+	// wraddr
+	// {{{
 	// The write address.  We'll write into our memory using this address.
 	// It starts at zero, and increments on every valid sample.
 	initial	wraddr = 0;
@@ -102,14 +118,19 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 		wraddr <= 0;
 	else if (i_ce)
 		wraddr <= wraddr + 1'b1;
+	// }}}
 
+	// w_requested_navg
+	// {{{
 	// Calculate the requested number of averages.  If this value is
 	// fixed, these will be INITIAL_NAVG and the input i_navg will be
 	// ignored, else the requested number will be the number given on
 	// the input.
-	wire	[(LGMEM-1):0]	w_requested_navg;
 	assign w_requested_navg = (FIXED_NAVG) ? INITIAL_NAVG : i_navg;
+	// }}}
 
+	// rdaddr
+	// {{{
 	// The read address.  We'll keep a running sum of values, and then need
 	// to subtract the value dropping off of the end of the summation. 
 	// We'll get this value from memory, using our read address to get
@@ -126,11 +147,17 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	else if (i_ce)
 		// rdaddr <= wraddr - navg + 1'b1;
 		rdaddr <= rdaddr + 1'b1;
-
+	// }}}
+	////////////////////////////////////////////////////////////////////////
 	//
 	// Clock stage one
+	// {{{
+	////////////////////////////////////////////////////////////////////////
 	//
 	//
+
+	// preval
+	// {{{
 	// "preval" just moves things down one stage in time, to give us
 	// a clock to read from our memory
 	initial	preval = 0;
@@ -139,28 +166,49 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 		preval <= 0;
 	else if (i_ce)
 		preval <= i_sample;
+	// }}}
 
+	// Write sample value to memory
+	// {{{
 	always @(posedge i_clk)
 	if (i_ce)
 		mem[wraddr] <= i_sample;
+	// }}}
 
+	// Read old sample value from memory
+	// {{{
 	initial	memval = 0;
 	always @(posedge i_clk)
 	if (i_ce)
 		memval <= mem[rdaddr];
+	// }}}
 
+	// full = all addresses have been set at least once
+	// {{{
+	// Unlike a FIFO, this is our normal operating condition
 	initial	full   = 1'b0;
 	always @(posedge i_clk)
 	if (i_reset)
 		full <= 0;
 	else if (i_ce)
 		full <= (full)||(rdaddr==0);
-
+	// }}}
+	// }}}
+	////////////////////////////////////////////////////////////////////////
+	//
 	// Clock stage two
+	// {{{
+	////////////////////////////////////////////////////////////////////////
+	//
+	//
+
 	//
 	// This stage uses the results of stage one.  Note the sign extension
 	// below.  (One of my simulators required me to do that ...)
 	//
+
+	// sub
+	// {{{
 	initial	sub = 0;
 	always @(posedge i_clk)
 	if (i_reset)
@@ -168,30 +216,49 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 	else if (i_ce)
 	begin
 		if (full)
-			sub <= { preval[(IW-1)], preval }
-					- { memval[(IW-1)], memval };
+			sub <= { OPT_SIGNED&preval[(IW-1)], preval }
+					- { OPT_SIGNED&memval[(IW-1)], memval };
 		else
-			sub <= { preval[(IW-1)], preval };
+			sub <= { OPT_SIGNED&preval[(IW-1)], preval };
 	end
+	// }}}
 
+	// }}}
+	////////////////////////////////////////////////////////////////////////
+	//
 	// Clock stage three
+	// {{{
+	////////////////////////////////////////////////////////////////////////
+	//
+	//
+
 	//
 	// Using the difference from stage two, calculate the overall block
 	// average summation.
+
+	// acc
+	// {{{
 	initial	acc = 0;
 	always @(posedge i_clk)
 	if (i_reset)
 		acc <= 0;
 	else if (i_ce)
-		acc <= acc + { {(LGMEM-1){sub[IW]}}, sub };
-
+		acc <= acc + { {(LGMEM-1){OPT_SIGNED&sub[IW]}}, sub };
+	// }}}
+	// }}}
+	////////////////////////////////////////////////////////////////////////
 	//
 	// Clock stage four
+	// {{{
+	////////////////////////////////////////////////////////////////////////
 	//
 	//
+
+
+	// rounded
+	// {{{
 	// Round the result from IW+LGMEM bits down to OW bits.  Also, deal
 	// with all the various cases of relationships between IW+LGLEN and OW
-	wire	[(IW+LGMEM-1):0]	rounded;
 	generate
 	// if (IW+LGMEM < OW)
 		// CANNOT BE: rounded is only IW+LGLEN bits long
@@ -211,16 +278,21 @@ module	boxcar(i_clk, i_reset, i_navg, i_ce, i_sample, o_result);
 				{(IW+LGMEM-OW-1){!acc[(IW+LGMEM-OW)]}}
 				};
 	endgenerate
+	// }}}
 
 	// (Still stage four)
+
+	// o_result
+	// {{{
 	// rounded is set with combinatorial logic.  It's also set to
 	// IW+LGMEM bits.  So, let's take a clock and drop from IW+LGMEM bits
 	// to however many bits have been requested of us.
+	initial	o_result = 0;
 	always @(posedge i_clk)
 	if (i_reset)
 		o_result <= 0;
 	else if (i_ce)
 		o_result <= rounded[(IW+LGMEM-1):(IW+LGMEM-OW)];
-
-
+	// }}}
+	// }}}
 endmodule

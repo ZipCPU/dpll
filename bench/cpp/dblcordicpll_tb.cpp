@@ -11,7 +11,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020, Gisselquist Technology, LLC
+// Copyright (C) 2020-2021, Gisselquist Technology, LLC
 // {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
@@ -42,11 +42,13 @@
 #include "Vdblcordicpll.h"
 
 #ifdef	OLD_VERILATOR
+// {{{
 #define	VVAR(A)	v__DOT_ ## A
 #error something
 #else
 #define	VVAR(A)	dblcordicpll__DOT_ ## A
 #endif
+// }}}
 
 #define	r_step	VVAR(_r_step)
 #define	ctr	VVAR(_r_phase)
@@ -58,13 +60,19 @@ int	main(int argc, char **argv) {
 	FILE		*intfp;
 	int	lclphase, lclstep;
 
+	// Open a trace file
+	// {{{
 	Verilated::traceEverOn(true);
 	VerilatedVcdC* tfp = new VerilatedVcdC;
 	tb.trace(tfp, 99);
 	tfp->open("dblcordicpll.vcd");
+	// }}}
 
+	// Open an output file for Octave analysis
+	// {{{
 	intfp = fopen("dblcordicpll.32t","w");
 	assert(intfp);
+	// }}}
 
 	// Initialize our core
 	// {{{
@@ -79,7 +87,8 @@ int	main(int argc, char **argv) {
 	tb.i_ce      = 1;
 	// }}}
 
-	// Run a test for 65536 clock cycles
+	// Main simulation loop -- Run a test for 65536 clock cycles
+	// {{{
 	int	now = 0;
 	for(int k=0; k<65536; k++) {
 		// {{{
@@ -125,6 +134,8 @@ int	main(int argc, char **argv) {
 		}
 		// }}}
 
+		// Setup inputs for the next round
+		// {{{
 		tb.i_ld = 0;
 		tb.i_clk = 0;
 		lclphase += lclstep;
@@ -136,7 +147,9 @@ int	main(int argc, char **argv) {
 		isv = isv & 0x0ffff;
 		tb.i_input = isv;
 		// }}}
+		// }}}
 	}
+	// }}}
 
 	tfp->close();
 	fclose(intfp);

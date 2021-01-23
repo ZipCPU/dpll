@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Filename: 	ppspll.v
-//
+// {{{
 // Project:	A collection of phase locked loop (PLL) related projects
 //
 // Purpose:	A strobe PLL, but one intended to operate on a strobe that
@@ -19,9 +19,9 @@
 //		Gisselquist Technology, LLC
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (C) 2018-2020, Gisselquist Technology, LLC
-//
+// }}}
+// Copyright (C) 2018-2021, Gisselquist Technology, LLC
+// {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
 // by the Free Software Foundation, either version 3 of the License, or (at
@@ -36,8 +36,9 @@
 // with this program.  (It's in the $(ROOT)/doc directory.  Run make with no
 // target there if the PDF file isn't present.)  If not, see
 // <http://www.gnu.org/licenses/> for a copy.
-//
+// }}}
 // License:	GPL, v3, as defined and found on www.gnu.org,
+// {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
 //
@@ -45,36 +46,53 @@
 //
 //
 `default_nettype	none
-//
-module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
-	o_pps, o_phase);
-	parameter		STEP_BITS = 24,
-				PHASE_BITS = 32+STEP_BITS;
-	parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1,
-				OPT_ASYNCHRONOUS_PPS= 1'b1;
-	localparam		PB = PHASE_BITS,
-				SB = STEP_BITS;
-	//
-	input	wire	i_clk;
-	//
-	input	wire			i_ld;
-	input	wire	[(SB-1):0]	i_step;
-	//
-	input	wire			i_ce;
-	input	wire			i_pps;
-	input	wire	[PB-1:0]	i_pcoef;
-	input	wire	[SB-1:0]	i_fcoef;
-	output	reg			o_pps;
-	output	wire	[PB-1:0]	o_phase;
-	//
+// }}}
+module	ppspll #(
+		// {{{
+		parameter		STEP_BITS = 24,
+					PHASE_BITS = 32+STEP_BITS,
+		parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1,
+					OPT_ASYNCHRONOUS_PPS= 1'b1,
+		localparam		PB = PHASE_BITS,
+					SB = STEP_BITS
+		// }}}
+	) (
+		// {{{
+		input	wire			i_clk,
+		//
+		input	wire			i_ld,
+		input	wire	[(SB-1):0]	i_step,
+		//
+		input	wire			i_ce,
+		input	wire			i_pps,
+		input	wire	[PB-1:0]	i_pcoef,
+		input	wire	[SB-1:0]	i_fcoef,
+		output	reg			o_pps,
+		output	wire	[PB-1:0]	o_phase
+		// }}}
+	);
 
+	// Signal declarations
+	// {{{
 	reg	[PB-1:0]	r_counter;
 	reg	[SB-1:0]	r_step;
 
-	wire	pps_stb;
+	wire			pps_stb;
+	reg			rcvd_pps;
+
+	reg			p, n, cc;
+	reg	[19:0]		load;
+	reg			nzload;
+
+	reg	[SB-1:0]	last_ctr;
+	// }}}
+
+	// pps_stb, rising edge detection
+	// {{{
 	generate if (OPT_ASYNCHRONOUS_PPS)
 	begin
-
+		// 2FF CDC prior to rising edge detection
+		// {{{
 		reg	r_pps, r_pipe, r_last, r_pps_stb;
 
 		initial	{ r_last, r_pps, r_pipe } = 3'b0;
@@ -93,9 +111,9 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 			r_pps_stb <= (r_pps_stb)||((!r_last)&&(r_pps));
 
 		assign	pps_stb = r_pps_stb;
-
+		// }}}
 	end else begin
-
+		// {{{
 		reg	last_pps;
 
 		initial	last_pps <= 1'b0;
@@ -112,9 +130,9 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 
 		assign	pps_stb = (!last_pps)&&(i_pps);
 		assign	w_pps = i_pps;
-
+		// }}}
 	end endgenerate
-
+	// }}}
 
 	///////
 	// 
@@ -127,12 +145,8 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 	// 
 	///////
 
-	reg	rcvd_pps;
-
-	reg	p, n, cc;
-	reg	[19:0]	load;
-	reg	nzload;
-
+	// rcvd_pps, load, nzload, p, n, cc, r_counter
+	// {{{
 	initial	rcvd_pps = 0;
 	initial	load = 0;
 	always @(posedge i_clk)
@@ -143,6 +157,8 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 		else if (pps_stb)
 			rcvd_pps <= 1'b1;
 
+		// p, n, r_counter[SB-1:0]
+		// {{{
 		p <= 0;
 		n <= 0;
 		cc <= 0;
@@ -164,7 +180,10 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 			{ cc, r_counter[SB-1:0] } <= r_counter[SB-1:0]
 					+ r_step[SB-1:0];
 		end
+		// }}}
 
+		// o_pps, r_counter[PB-1:SB]
+		// {{{
 		if (p)
 		begin
 			// r_counter <= r_counter + r_step + i_pcoef;
@@ -184,7 +203,10 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 					+ {{(PB-SB-1){1'b0}},cc};
 			// Step only changes on a measured error
 		end
+		// }}}
 
+		// load, nzload
+		// {{{
 		if ((!rcvd_pps)&&(r_counter[PB-1:PB-2]==2'b00))
 		begin
 			if (! &load)
@@ -198,8 +220,12 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 			load <= 0;
 			nzload <= 1'b0;
 		end
+		// }}}
 	end
+	// }}}
 
+	// r_step
+	// {{{
 	always @(posedge i_clk)
 	if (i_ld)
 		r_step <= i_step;
@@ -210,13 +236,18 @@ module	ppspll(i_clk, i_ld, i_step, i_ce, i_pps, i_pcoef, i_fcoef,
 		else if (nzload)
 			r_step <= r_step - i_fcoef;
 	end
+	// }}}
 
-
-	reg	[SB-1:0]	last_ctr;
+	// last_ctr
+	// {{{
 	always @(posedge i_clk)
 	if (i_ce)
 		last_ctr = r_counter;
+	// }}}
 
+	// o_phase
+	// {{{
 	assign	o_phase = { r_counter[PB-1:SB], last_ctr };
+	// }}}
 
 endmodule

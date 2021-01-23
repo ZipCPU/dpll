@@ -20,7 +20,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020, Gisselquist Technology, LLC
+// Copyright (C) 2020-2021, Gisselquist Technology, LLC
 // {{{
 //
 // This program is free software (firmware): you can redistribute it and/or
@@ -51,8 +51,8 @@ module	seqpolar #(
 		// {{{
 		localparam	IW=16,	// The number of bits in our inputs
 				OW=16,// The number of output bits to produce
-				NSTAGES=29,
-				XTRA= 4,// Extra bits for internal precision
+				// NSTAGES=29,
+				// XTRA= 4,// Extra bits for internal precision
 				WW=24,	// Our working bit-width
 				PW=32	// Bits in our phase variables
 		// }}}

@@ -1,7 +1,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Filename: 	stbpll_tb.cpp
-//
+// {{{
 // Project:	A collection of phase locked loop (PLL) related projects
 //
 // Purpose:	
@@ -10,9 +10,9 @@
 //		Gisselquist Technology, LLC
 //
 ////////////////////////////////////////////////////////////////////////////////
-//
-// Copyright (C) 2018-2020, Gisselquist Technology, LLC
-//
+// }}}
+// Copyright (C) 2018-2021, Gisselquist Technology, LLC
+// {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
 // by the Free Software Foundation, either version 3 of the License, or (at
@@ -27,24 +27,27 @@
 // with this program.  (It's in the $(ROOT)/doc directory.  Run make with no
 // target there if the PDF file isn't present.)  If not, see
 // <http://www.gnu.org/licenses/> for a copy.
-//
+// }}}
 // License:	GPL, v3, as defined and found on www.gnu.org,
+// {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
 //
 ////////////////////////////////////////////////////////////////////////////////
 //
-//
+// }}}
 #include <stdio.h>
 #include <verilated.h>
 #include "verilated_vcd_c.h"
 #include "Vstbpll.h"
 
 #ifdef	OLD_VERILATOR
+// {{{
 #define	VVAR(A)	v__DOT_ ## A
 #else
 #define	VVAR(A)	stbpll__DOT_ ## A
 #endif
+// }}}
 
 #define	r_step	VVAR(_r_step)
 #define	ctr	VVAR(_ctr)
@@ -55,16 +58,22 @@ int	main(int argc, char **argv) {
 	FILE		*intfp;
 	unsigned	lclphase, lclstep;
 
+	// Set up a VCD trace file
+	// {{{
 	Verilated::traceEverOn(true);
 	VerilatedVcdC* tfp = new VerilatedVcdC;
 	tb.trace(tfp, 99);
 	tfp->open("stbpll.vcd");
+	// }}}
 
+	// Open a second output file for Octave analysis
+	// {{{
 	intfp = fopen("stbpll.32t","w");
 	assert(intfp);
+	// }}}
 
 	// Initialize our core
-	//
+	// {{{
 	tb.i_lgcoeff = 10;
 	lclphase     = rand();
 	lclstep      = 0x00314159;
@@ -72,8 +81,13 @@ int	main(int argc, char **argv) {
 	tb.i_ld      = 1;
 	tb.i_clk     = 0;
 	tb.i_ce      = 1;
+	// }}}
 
+	// Main simulation loop
+	// {{{
 	for(int k=0; k<65536; k++) {
+		// Step the clock
+		// {{{
 		tb.eval();
 		tfp->dump(10*k+8);
 		tb.i_clk = 1;
@@ -82,8 +96,10 @@ int	main(int argc, char **argv) {
 		tb.i_clk = 0;
 		tb.eval();
 		tfp->dump(10*k+15);
+		// }}}
 
-	
+		// Output key values from within for Octave analysis
+		// {{{
 		{
 			int	od[8];
 			od[0] = lclphase;
@@ -101,14 +117,22 @@ int	main(int argc, char **argv) {
 
 			fwrite(od, sizeof(int), 8, intfp);
 		}
+		// }}}
 
+		// Set up for the next round
+		// {{{
 		tb.i_ld = 0;
 		tb.i_clk = 0;
 		lclphase += lclstep;
 		tb.i_stb = (lclphase < lclstep)?1:0;
+		// }}}
 	}
+	// }}}
 
+	// Clean up and exit
+	// {{{
 	tfp->close();
 	fclose(intfp);
 	printf("Simulation complete\n");
+	// }}}
 }
