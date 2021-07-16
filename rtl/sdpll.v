@@ -37,7 +37,6 @@
 // {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
-//
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -48,11 +47,11 @@ module	sdpll #(
 		parameter		PHASE_BITS = 32,
 		parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1,
 		parameter	[PHASE_BITS-1:0]	INITIAL_PHASE_STEP = 0,
+		parameter	[0:0]	OPT_GLITCHLESS = 1'b1,
 		localparam	MSB=PHASE_BITS-1
 		// }}}
 	) (
 		// {{{
-		//(i_clk, i_ld, i_step, i_ce, i_input, i_lgcoeff, o_phase, o_err
 		input	wire			i_clk,
 		//
 		input	wire			i_ld,
@@ -126,7 +125,7 @@ module	sdpll #(
 		phase_correction <= {1'b1,{(MSB){1'b0}}} >> i_lgcoeff;
 	// }}}
 
-	// o_phase, ctr
+	// ctr
 	// {{{
 	// Finally, apply a correction
 	initial	ctr = 0;
@@ -143,13 +142,23 @@ module	sdpll #(
 		// If the counter is ahead of the input, then we should
 		// slow it down a touch.
 		else if (lead)
-			ctr <= ctr + r_step - phase_correction;
+		begin
+			// This check is necessary to keep us glitch-free
+			// If the step is less than the phase correction, the
+			// recovered clock might appear to go backwards.
+			if (!OPT_GLITCHLESS || r_step > phase_correction)
+				ctr <= ctr + r_step - phase_correction;
+		end
 
 		// Likewise, if the counter is falling behind the input,
 		// then we need to speed it up.
 		else // if (lag)
 			ctr <= ctr + r_step + phase_correction;
 	end
+	// }}}
+
+	// o_phase (== ctr)
+	// {{{
 	// Incidentally, we'll also output this internal phase in case you wish
 	// to use it for synchronizing anything with this clock.
 	assign	o_phase = ctr;
@@ -200,7 +209,7 @@ module	sdpll #(
 		o_err <= (!phase_err) ? 2'b00 : ((lead) ? 2'b11 : 2'b01);
 	// }}}
 
-	// o_dbg
+	// o_dbg -- a filtered o_err measurement
 	// {{{
 	// The error signal by itself can be ... misleading.  Whenever it takes
 	// place, it is always a maximum error.  The signal is better understood
