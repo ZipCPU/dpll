@@ -40,12 +40,13 @@
 #include <verilated.h>
 #include "verilated_vcd_c.h"
 #include "Vstbpll.h"
+#include "Vstbpll___024root.h"
 
 #ifdef	OLD_VERILATOR
 // {{{
 #define	VVAR(A)	v__DOT_ ## A
 #else
-#define	VVAR(A)	stbpll__DOT_ ## A
+#define	VVAR(A)	rootp->stbpll__DOT_ ## A
 #endif
 // }}}
 
