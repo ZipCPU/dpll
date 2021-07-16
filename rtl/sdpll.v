@@ -173,7 +173,7 @@ module	sdpll #(
 		freq_correction <= { 3'b001, {(MSB-2){1'b0}} } >> (2*i_lgcoeff);
 	// }}}
 
-	// r_step
+	// r_step -- frequency tracking
 	// {{{
 	// On the clock, we'll apply this frequency correction, either slowing
 	// down or speeding up the frequency, any time there is a phase error.

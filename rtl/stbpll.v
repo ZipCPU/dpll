@@ -36,7 +36,6 @@
 // {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
-//
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -46,6 +45,8 @@ module	stbpll #(
 		// {{{
 		parameter		PHASE_BITS = 32,
 		parameter	[0:0]	OPT_TRACK_FREQUENCY = 1'b1,
+		parameter	[PHASE_BITS-1:0]	INITIAL_PHASE_STEP = 0,
+		parameter	[0:0]	OPT_GLITCHLESS = 1'b1,
 		localparam		MSB=PHASE_BITS-1
 		// }}}
 	) (
@@ -155,7 +156,13 @@ module	stbpll #(
 		// If the counter is ahead of the input, then we should
 		// slow it down a touch.
 		else if (lead)
-			{ o_stb,ctr } <= ctr + r_step - phase_correction;
+		begin
+			// This check is necessary to keep us glitch-free
+			// If the step is less than the phase correction, the
+			// recovered clock might appear to go backwards.
+			if (!OPT_GLITCHLESS || r_step > phase_correction)
+				{ o_stb,ctr } <= ctr + r_step - phase_correction;
+		end
 
 		// Likewise, if the counter is falling behind the input,
 		// then we need to speed it up.
@@ -183,6 +190,7 @@ module	stbpll #(
 	// down or speeding up the frequency, any time there is a phase error.
 	// The exceptions are if 1) we aren't tracking frequency, or 2) the
 	// user wants to load in what frequency to use.
+	initial	r_step = INITIAL_PHASE_STEP;
 	always @(posedge i_clk)
 	if (i_ld)
 		r_step <= { 1'b0, i_step };
