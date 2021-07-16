@@ -13,7 +13,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020, Gisselquist Technology, LLC
+// Copyright (C) 2020-2021, Gisselquist Technology, LLC
 // {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
@@ -34,7 +34,6 @@
 // {{{
 //		http://www.gnu.org/licenses/gpl.html
 //
-//
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -45,6 +44,7 @@ module	quadpll #(
 		parameter			PHASE_BITS = 32,
 		parameter	[0:0]		OPT_TRACK_FREQUENCY = 1'b1,
 		parameter [PHASE_BITS-1:0]	INITIAL_PHASE_STEP = 0,
+		parameter	[0:0]	OPT_GLITCHLESS = 1'b1,
 		localparam			MSB=PHASE_BITS-1
 		// }}}
 	) (
@@ -158,7 +158,13 @@ module	quadpll #(
 		// If the counter is ahead of the input, then we should
 		// slow it down a touch.
 		else if (lead)
-			ctr <= ctr + r_step - phase_correction;
+		begin
+			// This check is necessary to keep us glitch-free
+			// If the step is less than the phase correction, the
+			// recovered clock might appear to go backwards.
+			if (!OPT_GLITCHLESS || r_step > phase_correction)
+				ctr <= ctr + r_step - phase_correction;
+		end
 
 		// Likewise, if the counter is falling behind the input,
 		// then we need to speed it up.

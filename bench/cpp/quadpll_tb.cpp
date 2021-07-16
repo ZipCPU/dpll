@@ -40,13 +40,14 @@
 #include <verilated.h>
 #include "verilated_vcd_c.h"
 #include "Vquadpll.h"
+#include "Vquadpll___024root.h"
 
 #ifdef	OLD_VERILATOR
 // {{{
 #define	VVAR(A)	v__DOT_ ## A
 #error something
 #else
-#define	VVAR(A)	quadpll__DOT_ ## A
+#define	VVAR(A)	rootp->quadpll__DOT_ ## A
 #endif
 // }}}
 
