@@ -58,8 +58,8 @@ module	sdpll #(
 		input	wire	[(MSB-1):0]	i_step,
 		//
 		input	wire			i_ce,
-		input	wire			i_input,
-		input	wire	[4:0]		i_lgcoeff,
+		input	wire			i_input,	// Incoming clk
+		input	wire	[4:0]		i_lgcoeff,	// LgGain coeff
 		output	wire	[PHASE_BITS-1:0] o_phase,
 		output	reg	[1:0]		o_err
 		//
