@@ -44,7 +44,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2017-2021, Gisselquist Technology, LLC
+// Copyright (C) 2017-2024, Gisselquist Technology, LLC
 // {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of  the GNU General Public License as published
@@ -259,25 +259,28 @@ module	boxcar #(
 	// {{{
 	// Round the result from IW+LGMEM bits down to OW bits.  Also, deal
 	// with all the various cases of relationships between IW+LGLEN and OW
-	generate
+	generate begin : RND
 	// if (IW+LGMEM < OW)
 		// CANNOT BE: rounded is only IW+LGLEN bits long
 		// Besides, artificially increasing the number of bits doesn't
 		// really make sense
 	if (IW+LGMEM == OW)
+	begin : NO_ROUNDING
 		// No rounding required, output is the acc(umulator)
 		assign	rounded = acc;
-	else if (IW+LGMEM == OW + 1)
+	end else if (IW+LGMEM == OW + 1)
+	begin : NO_DROP_BIT
 		// Need to drop one bit, round towards even
 		assign	rounded = acc + { {(OW){1'b0}}, acc[1] };
-	else // if (IW+LGMEM > OW)
+	end else // if (IW+LGMEM > OW)
+	begin : GENERIC
 		// Drop more than one bit, rounding towards even
 		assign	rounded = acc + {
 				{(OW){1'b0}},
 				acc[(IW+LGMEM-OW)],
 				{(IW+LGMEM-OW-1){!acc[(IW+LGMEM-OW)]}}
 				};
-	endgenerate
+	end end endgenerate
 	// }}}
 
 	// (Still stage four)

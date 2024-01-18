@@ -11,7 +11,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020-2021, Gisselquist Technology, LLC
+// Copyright (C) 2020-2024, Gisselquist Technology, LLC
 // {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
@@ -40,13 +40,14 @@
 #include <math.h>
 #include "verilated_vcd_c.h"
 #include "Vdblcordicpll.h"
-#include "Vdblcordicpll___024root.h"
 
 #ifdef	OLD_VERILATOR
 // {{{
 #define	VVAR(A)	v__DOT_ ## A
 #error something
 #else
+#include "Vdblcordicpll___024root.h"
+
 #define	VVAR(A)	rootp->dblcordicpll__DOT_ ## A
 #endif
 // }}}

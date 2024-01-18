@@ -19,7 +19,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // }}}
-// Copyright (C) 2020-2021, Gisselquist Technology, LLC
+// Copyright (C) 2020-2024, Gisselquist Technology, LLC
 // {{{
 // This program is free software (firmware): you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as published
@@ -119,7 +119,7 @@ module	dblcordicpll #(
 	//
 	//
 	generate if (OPT_FILTER && OPT_TRACK_FREQUENCY)
-	begin
+	begin : TRACKING_SIN_COS
 		// {{{
 		reg		[2:0]		shift_ce;
 		reg	signed	[IW-1:0]	diff_sin, diff_cos,
@@ -156,7 +156,7 @@ module	dblcordicpll #(
 		assign	fil_ce = shift_ce[2];
 		// }}}
 	end else if (OPT_FILTER)
-	begin
+	begin : FILTER_SIN_COS
 		// {{{
 		reg		[1:0]		shift_ce;
 		reg	signed	[IW-1:0]	diff_sin, diff_cos;
@@ -186,7 +186,7 @@ module	dblcordicpll #(
 
 		assign	fil_ce = shift_ce[1];
 		// }}}
-	end else begin
+	end else begin : OTHER
 		// {{{
 		assign	fil_ce  = pm_done;
 		always @(*)
@@ -221,7 +221,7 @@ module	dblcordicpll #(
 
 	// Track frequency
 	generate if (OPT_TRACK_FREQUENCY)
-	begin
+	begin : FREQ_CORRECTION
 		// {{{
 		reg	[5:0]			log_beta;
 		reg	signed [PW-1:0]		freq_correction;
@@ -239,7 +239,7 @@ module	dblcordicpll #(
 		else if (pd_done)
 			r_step <= r_step - freq_correction;
 		// }}}
-	end else begin
+	end else begin : PHASE_CORRECTION_ONLY
 		// {{{
 		always @(posedge i_clk)
 		if (i_ld)
